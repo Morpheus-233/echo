@@ -59,8 +59,8 @@ function mapCard(row: CardRow): Card {
 export function createPostgresStore(): Store {
   const url = process.env.DATABASE_URL!;
   const sql = postgres(url, {
-    max: 5,
-    idle_timeout: 20,
+    max: 1,
+    idle_timeout: 10,
     connect_timeout: 10,
     prepare: false,
     ssl: /localhost|127\.0\.0\.1/.test(url) ? false : "require",
