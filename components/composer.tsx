@@ -46,7 +46,6 @@ export function Composer() {
           }
         }}
         rows={4}
-        placeholder="A memory leak is memory that was allocated and never freed…"
         className="mt-2 w-full resize-y bg-transparent font-display text-[1.15rem] leading-relaxed tracking-[-0.01em] outline-none placeholder:text-ink-faint/70"
       />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-rule/70 pt-3">
