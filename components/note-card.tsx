@@ -22,6 +22,16 @@ export function NoteCard({ note }: { note: NoteWithCards }) {
   const active = note.cards.filter((card) => card.status === "active");
   const learned = note.cards.filter((card) => card.status === "learned");
 
+  // Cards from one note usually share a rung and a date; group them so two
+  // identical chips don't appear side by side.
+  const upcoming = new Map<string, { stage: number; dueOn: string; count: number }>();
+  for (const card of active) {
+    const key = `${card.stage}|${card.dueOn}`;
+    const entry = upcoming.get(key);
+    if (entry) entry.count += 1;
+    else upcoming.set(key, { stage: card.stage, dueOn: card.dueOn, count: 1 });
+  }
+
   function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null);
     startTransition(async () => {
@@ -105,12 +115,13 @@ export function NoteCard({ note }: { note: NoteWithCards }) {
 
       {note.status === "ready" && note.cards.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {active.map((card) => (
+          {[...upcoming.entries()].map(([key, group]) => (
             <span
-              key={card.id}
+              key={key}
               className="rounded-full border border-rule bg-paper-raised px-2.5 py-1 text-[11px] text-ink-soft"
             >
-              {stageLabel(card.stage)} · {formatShort(card.dueOn)}
+              {stageLabel(group.stage)} · {formatShort(group.dueOn)}
+              {group.count > 1 ? ` ×${group.count}` : ""}
             </span>
           ))}
           {learned.length > 0 ? (
