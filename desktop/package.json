@@ -1,0 +1,28 @@
+{
+  "name": "echo-desktop",
+  "version": "1.0.0",
+  "description": "Echo — Spaced Repetition Journal",
+  "main": "main.js",
+  "author": "Morpheus",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.echo.desktop",
+    "productName": "Echo",
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "Echo.exe"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  }
+}

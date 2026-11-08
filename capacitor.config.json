@@ -1,0 +1,9 @@
+{
+  "appId": "com.echo.journal",
+  "appName": "Echo",
+  "webDir": "public",
+  "server": {
+    "url": "https://echo-journal-5pzk.netlify.app",
+    "cleartext": true
+  }
+}

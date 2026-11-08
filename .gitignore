@@ -40,3 +40,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# netlify
+.netlify
+
+# mobile & desktop builds
+Echo.apk
+Echo.exe
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+desktop/node_modules
+desktop/dist
+
