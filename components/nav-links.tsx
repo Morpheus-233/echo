@@ -7,20 +7,21 @@ const items = [
   { href: "/", label: "Today" },
   { href: "/journal", label: "Journal" },
   { href: "/review", label: "Review" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function NavLinks({ due }: { due: number }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex items-center gap-0.5 sm:gap-1">
       {items.map((item) => {
         const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`relative rounded-full px-3 py-1.5 text-[13px] transition ${
+            className={`relative rounded-full px-2.5 py-1.5 text-[12px] sm:px-3 sm:text-[13px] transition ${
               active ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper-deep hover:text-ink"
             }`}
           >

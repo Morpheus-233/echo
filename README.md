@@ -1,91 +1,106 @@
 # Echo
 
-A journal that asks you back.
+**A personal learning journal that asks you back.**
 
-Write what you learned today, in your own words. Echo turns each note into
-questions, then brings them back on **day 2, 3, 7, 16 and 35** — multiple
-choice, or a box to answer in your own words. Your note is always the answer,
-verbatim. The AI writes the questions; it never rewrites what you wrote.
+Write what you learned today, in your own words. Echo turns each note into recall questions and brings them back on **day 2, 3, 7, 16, and 35** — as multiple choice or a free-response box.
 
-Same journal on your PC and your phone, through one database.
+**The note is canon.** The AI writes recall questions and distractors; it never rewrites, summarises, or replaces what you wrote. Every reveal shows your original words verbatim.
 
-## What it does
+---
 
-- **Today** — a dated page, one prompt, as many notes as you want.
-- **Journal** — a month calendar; tap a day to see what you learned on it.
-  A skipped day stays empty. Nothing is backdated.
-- **Review** — everything due, all of it, shown up front. Pick an option or
-  type your answer; then your original note is revealed underneath.
-- **Ladder** — pass, and the gap grows. Miss, and the card returns in two days
-  one rung lower. Pass the 35-day rung and the card is *learned*.
+## Core Invariants
 
-## Run it locally
+- **Your words stay untouched** — Cards store only `question`, `options`, and `correctIndex`. The reveal always displays your verbatim note.
+- **Absolute recall ladder (`2, 3, 7, 16, 35`)** — Due dates are anchored to the day the note was written (`note_date + rung`), never shifted relative to the last review. Late reviews never schedule in the past (`max(anchored rung, tomorrow)`).
+- **Gentle lapses** — Missing a question drops it one rung and brings it back in 2 days. Passing the 35-day rung marks the question `learned`.
+- **Self-graded typed recall** — Multiple-choice answers are graded automatically; typed answers are self-graded (*"I got it"* / *"I missed it"*) after revealing your note.
+- **No backfilling** — A skipped day stays empty on the calendar. Capture is only ever *today*.
+- **Advisory suggestions** — If the AI examiner spots a factual error in your note, it adds a dismissible one-sentence note (*"The examiner wonders"*). It never edits your text.
+
+---
+
+## Screens
+
+| Route | Purpose |
+|---|---|
+| `/` (**Today**) | Dated prompt, note composer, due-queue banner, and today's notes with grouped schedule chips. |
+| `/journal` (**Journal**) | Month calendar with daily note counts, day inspector, and full-text search across all notes. |
+| `/review` (**Review**) | Full due queue with multiple-choice or typed recall, keyboard shortcuts (`1–4`, `Enter`, `G`/`M`), and verbatim note reveal. |
+| `/settings` (**Settings**) | Recall ladder summary, one-click **Markdown (`.md`)** and **JSON (`.json`)** journal exports, and runtime environment status. |
+
+---
+
+## Quickstart (Zero-Config Demo Mode)
+
+Echo runs out of the box with **zero credentials**:
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill it in
 npm run dev
 ```
 
-With no `DATABASE_URL`, Echo runs in **demo mode**: a few seeded notes in
-memory, everything works, data resets on restart.
+Open [http://localhost:3000](http://localhost:3000):
 
-With no `LLM_API_KEY`, notes save fine but their questions can't be written —
-the note shows the reason and a retry button.
+- **No `DATABASE_URL`** → Runs in **in-memory demo mode** with seeded notes and due review cards so you can explore Today, Journal, Review, and Settings immediately.
+- **No `LLM_API_KEY`** → New notes still save cleanly; question generation reports why it couldn't run and provides a one-click **Try again** button.
 
-## Database
-
-Any Postgres works. Supabase's free tier is the easy path:
-
-1. Create a project at supabase.com.
-2. Open the SQL editor and run `supabase/migrations/0001_init.sql`.
-3. Copy the connection string (Project Settings → Database → Connection string → URI)
-   into `DATABASE_URL`.
-4. If the host is a pooler, keep the `?pgbouncer=true` style params — the app
-   already disables prepared statements.
-
-## AI
-
-Echo talks to any OpenAI-compatible endpoint. The defaults are Groq's free
-tier — a key with no credit card, roughly 1,000 requests a day, and a services
-agreement that does not train on your inputs.
-
-```
-LLM_BASE_URL=https://api.groq.com/openai/v1
-LLM_MODEL=openai/gpt-oss-120b
-LLM_API_KEY=gsk_...
-```
-
-Swapping to Gemini or OpenRouter is three environment variables, not a code
-change. The key is only ever read on the server.
-
-## Deploy
-
-Vercel, free tier:
-
-1. Push the repo, import it in Vercel.
-2. Add the same environment variables, plus a real `APP_PASSCODE`.
-3. Deploy. Open it on your phone and "Add to Home Screen" — it runs fullscreen
-   with an icon, no app store involved.
-
-## Tests
+To configure real persistence and AI question generation, copy `.env.example` to `.env.local`:
 
 ```bash
-npm test
+# macOS / Linux
+cp .env.example .env.local
+
+# Windows PowerShell
+Copy-Item .env.example .env.local
 ```
 
-The ladder lives in `lib/schedule.ts` and is pure, so it is tested without a
-database or a network: month boundaries, late reviews, lapses, and the
-learned state.
+---
 
-## Layout
+## Environment Variables
 
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | *(empty → demo mode)* | Postgres connection URI (e.g. Supabase pooler or direct connection). |
+| `LLM_API_KEY` | *(empty)* | API key for the OpenAI-compatible provider (Groq free tier recommended). |
+| `LLM_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible `/chat/completions` base URL (Groq, OpenRouter, Gemini, etc.). |
+| `LLM_MODEL` | `openai/gpt-oss-120b` | Model identifier used to generate recall questions. |
+| `APP_PASSCODE` | *(empty → open)* | Single-user passphrase gate backed by an HMAC-signed `httpOnly` cookie. |
+| `APP_TIMEZONE` | `UTC` | IANA timezone (e.g. `Asia/Kolkata`, `America/New_York`) deciding when "today" rolls over. |
+
+---
+
+## Architecture & Layout
+
+Built with **Next.js 16 (App Router, Turbopack)**, **React 19**, **TypeScript**, **Tailwind CSS v4**, **Postgres (`postgres`)**, **Zod**, and **Vitest**. Installable on mobile & desktop as a **PWA**.
+
+```text
+app/                  App Router pages (today, journal, review, settings, login), server actions, PWA manifest
+components/           Composer, note card (grouped schedule chips), calendar, review session, export controls, nav
+lib/
+  schedule.ts         Pure spaced-repetition ladder (days 2, 3, 7, 16, 35)
+  llm.ts              Examiner system prompt, OpenAI-compatible fetch, tolerant JSON extraction & Zod validation
+  export.ts           Deterministic JSON & Markdown journal exporters
+  auth.ts             Single-user passcode verification & HMAC session cookie
+  date.ts             Timezone-aware YYYY-MM-DD calendar arithmetic
+  store/              Unified Store interface with Postgres (lib/store/postgres.ts) & in-memory (lib/store/memory.ts) backends
+supabase/migrations/  Idempotent Postgres schema (notes, cards, reviews)
+docs/                 Design specification (docs/design.md) & engineering handoff (docs/handoff.md)
 ```
-app/            pages, server actions, manifest
-components/     composer, note card, calendar, review session
-lib/schedule.ts the ladder — pure functions
-lib/llm.ts      prompt, provider call, JSON validation
-lib/store/      one interface, Postgres and in-memory implementations
-supabase/       schema
-docs/           design decisions
+
+---
+
+## Database Setup (Supabase / Postgres)
+
+1. Create a free project on [Supabase](https://supabase.com) (or any Postgres instance).
+2. Run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) in the SQL Editor (safe to run multiple times).
+3. Set `DATABASE_URL` in `.env.local` (Transaction pooler URIs with `?pgbouncer=true` work out of the box; prepared statements are disabled automatically).
+
+---
+
+## Testing & Verification
+
+```bash
+npm test          # Vitest unit suite (schedule ladder, LLM JSON parser, journal export)
+npm run lint      # ESLint check
+npm run build     # Production Next.js build & TypeScript check
 ```

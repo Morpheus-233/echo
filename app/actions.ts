@@ -23,6 +23,7 @@ function revalidateAll() {
   revalidatePath("/");
   revalidatePath("/journal");
   revalidatePath("/review");
+  revalidatePath("/settings");
 }
 
 async function convert(noteId: string, body: string, noteDate: string): Promise<ActionResult> {
