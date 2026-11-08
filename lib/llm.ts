@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GeneratedSet } from "./types";
+import type { GeneratedCard, GeneratedSet } from "./types";
 
 export const CardSchema = z.object({
   question: z.string().trim().min(8, "question is too short"),
@@ -62,9 +62,13 @@ export function parseModelJson(raw: string): GeneratedSet {
     throw new LlmError("bad-json", `The model's JSON did not match the schema: ${result.error.issues[0]?.message ?? "unknown"}`);
   }
 
+  const cleanSuggestion = result.data.suggestion
+    ?.replace(/^suggestion:\s*/i, "")
+    .trim();
+
   return {
     cards: result.data.cards,
-    suggestion: result.data.suggestion?.trim() || null,
+    suggestion: cleanSuggestion || null,
   };
 }
 
@@ -126,7 +130,7 @@ async function callModel(noteBody: string, noteDate: string, repair: string | nu
       body: JSON.stringify({
         model: model(),
         temperature: 0.4,
-        max_tokens: 1200,
+        max_tokens: 2400,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -155,6 +159,22 @@ async function callModel(noteBody: string, noteDate: string, repair: string | nu
   return content;
 }
 
+function shuffleCardOptions(card: GeneratedCard): GeneratedCard {
+  const indexed = card.options.map((option, index) => ({
+    option,
+    isCorrect: index === card.correctIndex,
+  }));
+  for (let i = indexed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+  return {
+    question: card.question,
+    options: indexed.map((item) => item.option),
+    correctIndex: indexed.findIndex((item) => item.isCorrect),
+  };
+}
+
 /** Ask the model for cards about one note, with one repair attempt. */
 export async function generateCards(noteBody: string, noteDate: string): Promise<GeneratedSet> {
   const body = noteBody.trim();
@@ -166,7 +186,11 @@ export async function generateCards(noteBody: string, noteDate: string): Promise
   for (let attempt = 0; attempt < 2; attempt++) {
     const raw = await callModel(body, noteDate, repair);
     try {
-      return parseModelJson(raw);
+      const parsed = parseModelJson(raw);
+      return {
+        cards: parsed.cards.map(shuffleCardOptions),
+        suggestion: parsed.suggestion,
+      };
     } catch (error) {
       lastError = error;
       repair = error instanceof Error ? error.message : "invalid JSON";
