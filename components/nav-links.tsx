@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const items = [
   { href: "/", label: "Today" },
@@ -12,15 +13,30 @@ const items = [
 
 export function NavLinks({ due }: { due: number }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [optimisticPath, setOptimisticPath] = useState(pathname);
+
+  useEffect(() => {
+    setOptimisticPath(pathname);
+  }, [pathname]);
 
   return (
     <nav className="flex items-center gap-0.5 sm:gap-1">
       {items.map((item) => {
-        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        const active =
+          item.href === "/"
+            ? optimisticPath === "/"
+            : optimisticPath.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
+            prefetch={true}
+            onPointerEnter={() => router.prefetch(item.href)}
+            onTouchStart={() => router.prefetch(item.href)}
+            onClick={() => {
+              setOptimisticPath(item.href);
+            }}
             className={`relative rounded-full px-2.5 py-1.5 text-[12px] sm:px-3 sm:text-[13px] transition ${
               active ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper-deep hover:text-ink"
             }`}
