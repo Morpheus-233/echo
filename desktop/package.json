@@ -12,7 +12,8 @@
     "appId": "com.echo.desktop",
     "productName": "Echo",
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "icon.png"
     },
     "portable": {
       "artifactName": "Echo.exe"

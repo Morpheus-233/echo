@@ -1,4 +1,5 @@
 const { app, BrowserWindow, shell } = require("electron");
+const path = require("path");
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -7,6 +8,7 @@ function createWindow() {
     minWidth: 420,
     minHeight: 600,
     title: "Echo",
+    icon: path.join(__dirname, "icon.png"),
     backgroundColor: "#fbf8f1",
     autoHideMenuBar: true,
     webPreferences: {
